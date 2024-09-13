@@ -1,21 +1,31 @@
-    <!-- <h1>The Jobs EJS Application</h1>
-    <hr /> -->
+<h1>The Jobs EJS Application</h1>
 
-    <h1>The Jobs EJS Application</h1>
+<% if (user) { %>
+   
+    <p style="color:blue; font-size:18px;">
+      User <span style="text-transform: capitalize;"><%= user.name %></span> is logged on.
+      
+    </p>
 
-    <% if (errors) {
-    
-        errors.forEach( (err) => { %>
-    
-            <div>Error: <%= err %></div>
+    <form method="POST" action="/sessions/logoff">
+      <button>Logoff</button>
+    </form>
 
-        <% }) } %>
+<% } %>
 
-    <% if (info) {
-        info.forEach((msg) => { %>
-        
-            <div>Info: <%= msg %></div>
-
-        <% }) } %>
-        
-    <hr />
+<% if (errors) {
+    errors.forEach((err) => { %>
+      <div style="color:red;font-size:18px;">
+        Error: <%= err %>
+      </div>
+    <% })
+  } %>
+  
+  <% if (info) {
+    info.forEach((msg) => { %>
+      <div style="color: green; font-size:18px;">
+        Info: <%= msg %>
+      </div>
+    <% })
+  } %>
+<hr />

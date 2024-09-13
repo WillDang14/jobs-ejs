@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const bcrypt = require("bcryptjs");
 
-const jwt = require("jsonwebtoken");
+// const jwt = require("jsonwebtoken");
 
 /////////////////////////////////////////////////////////////////
 const UserSchema = new mongoose.Schema({
@@ -46,16 +46,16 @@ UserSchema.pre("save", async function () {
 // };
 
 // tạo method mới để tạo JWT
-UserSchema.methods.createJWT = function () {
-    // console.log(`this.id = ${this._id}`);
-    // console.log(`this.name = ${this.name}`);
+// UserSchema.methods.createJWT = function () {
+//     // console.log(`this.id = ${this._id}`);
+//     // console.log(`this.name = ${this.name}`);
 
-    return jwt.sign(
-        { userId: this._id, name: this.name },
-        process.env.JWT_SECRET,
-        { expiresIn: process.env.JWT_LIFETIME }
-    );
-};
+//     return jwt.sign(
+//         { userId: this._id, name: this.name },
+//         process.env.JWT_SECRET,
+//         { expiresIn: process.env.JWT_LIFETIME }
+//     );
+// };
 
 // compare PW with PW from DB
 UserSchema.methods.comparePassword = async function (candidatePassword) {
