@@ -1,3 +1,5 @@
 /views/partials/head.ejs
 /views/partials/header.ejs
 /views/secretWord.ejs
+/views/logon.ejs
+/views/register.ejs

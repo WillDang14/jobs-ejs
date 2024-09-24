@@ -1,30 +1,17 @@
 require("dotenv").config(); // to load the .env file into the process.env object
 
-require("express-async-errors");
-
 const express = require("express");
-
+require("express-async-errors");
 const app = express();
 
+// .Protecting a Route
+const secretWordRouter = require("./routes/secretWord");
+const auth = require("./middleware/auth");
+
 /* ================================================================== */
-// tự thêm vào
-// How to see the all the response headers in Node Express?
-// https://stackoverflow.com/questions/60357940/how-to-see-the-all-the-response-headers-in-node-express
-//
-// let nTime = 0;
+app.set("view engine", "ejs");
 
-// app.use(function (req, res, next) {
-//     res.on("finish", () => {
-//         nTime++;
-//         console.log("Lan dang nhap: ", nTime);
-
-//         console.log(`request url = ${req.originalUrl}`);
-
-//         console.log(res.getHeaders());
-//     });
-
-//     next();
-// });
+app.use(require("body-parser").urlencoded({ extended: true }));
 
 /* ================================================================== */
 // Sessions
@@ -69,38 +56,77 @@ app.use(session(sessionParms));
 app.use(require("connect-flash")());
 
 /* ================================================================== */
-app.set("view engine", "ejs");
+// app.set("view engine", "ejs");
 
-app.use(require("body-parser").urlencoded({ extended: true }));
+// app.use(require("body-parser").urlencoded({ extended: true }));
+
+//////////////////////////////////////////////////////////////////////
+// Configuring Passport
+const passport = require("passport");
+const passportInit = require("./passport/passportInit");
+
+passportInit();
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+//////////////////////////////////////////////////////////////////////
+// Add these lines right after the connect-flash line:
+
+app.use(require("./middleware/storeLocals"));
+
+app.get("/", (req, res) => {
+    console.log("Home page!");
+    console.log("req.flash", res.flash);
+    console.log("req.body", res.body);
+    // console.log("req.user = ", res.user);
+    console.log("res.locals = ", res.locals);
+
+    res.render("index");
+});
+
+app.use("/sessions", require("./routes/sessionRoutes"));
 
 //////////////////////////////////////////////////////////////////////
 // This is for Working with FLash
-app.get("/secretWord", (req, res) => {
-    if (!req.session.secretWord) {
-        req.session.secretWord = "syzygy";
-    }
+// app.get("/secretWord", (req, res) => {
+//     console.log("req.sessionID = ", req.sessionID);
+//     console.log("req.session = ", req.session);
 
-    res.locals.info = req.flash("info");
+//     if (!req.session.secretWord) {
+//         req.session.secretWord = "syzygy";
+//     }
 
-    res.locals.errors = req.flash("error");
+//     res.locals.info = req.flash("info");
 
-    res.render("secretWord", { secretWord: req.session.secretWord });
-});
+//     res.locals.errors = req.flash("error");
 
-app.post("/secretWord", (req, res) => {
-    if (req.body.secretWord.toUpperCase()[0] == "P") {
-        req.flash("error", "That word won't work!");
+//     console.log("res.locals = ", res.locals);
 
-        req.flash("error", "You can't use words that start with p.");
-    } else {
-        req.session.secretWord = req.body.secretWord;
+//     res.render("secretWord", { secretWord: req.session.secretWord });
+// });
 
-        req.flash("info", "The secret word was changed.");
-    }
+// app.post("/secretWord", (req, res) => {
+//     //
+//     console.log("req.body = ", req.body);
 
-    //
-    res.redirect("/secretWord");
-});
+//     // tạo array có tên là "error", có thể cho bao nhiêu message tùy ý
+//     if (req.body.secretWord.toUpperCase()[0] == "P") {
+//         req.flash("error", "That word won't work!");
+
+//         req.flash("error", "You can't use words that start with p.");
+//     } else {
+//         req.session.secretWord = req.body.secretWord;
+
+//         req.flash("info", "The secret word was changed.");
+//     }
+
+//     //
+//     res.redirect("/secretWord");
+// });
+
+// app.use("/secretWord", secretWordRouter);
+app.use("/secretWord", auth, secretWordRouter);
 
 //////////////////////////////////////////////////////////////////////
 // Error handling
@@ -120,6 +146,8 @@ const port = process.env.PORT || 3000;
 
 const start = async () => {
     try {
+        await require("./db/connect")(process.env.MONGO_URI);
+
         app.listen(port, () =>
             console.log(`Server is listening on port ${port}...`)
         );
