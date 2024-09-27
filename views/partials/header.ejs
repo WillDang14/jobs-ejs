@@ -8,7 +8,11 @@
     </p>
 
     <form method="POST" action="/sessions/logoff">
+
+      <input type="hidden" name="_csrf" value="<%= _csrf %>">
+
       <button>Logoff</button>
+      
     </form>
 
 <% } %>

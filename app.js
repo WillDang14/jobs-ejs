@@ -8,10 +8,57 @@ const app = express();
 const secretWordRouter = require("./routes/secretWord");
 const auth = require("./middleware/auth");
 
+// “cross site request forgery” (CSRF)
+const csrf = require("host-csrf");
+const cookieParser = require("cookie-parser");
+
 /* ================================================================== */
 app.set("view engine", "ejs");
 
 app.use(require("body-parser").urlencoded({ extended: true }));
+
+/* ================================================================== */
+// “cross site request forgery” (CSRF)
+app.use(cookieParser(process.env.SESSION_SECRET));
+app.use(express.urlencoded({ extended: false }));
+
+let csrf_development_mode = true;
+
+if (app.get("env") === "production") {
+    csrf_development_mode = false;
+    app.set("trust proxy", 1);
+}
+
+const csrf_options = {
+    protected_operations: ["PATCH"],
+    protected_content_types: ["application/json"],
+    development_mode: csrf_development_mode,
+};
+
+const csrf_middleware = csrf(csrf_options); // initialise and return middlware
+
+// Chú ý là hướng dẫn trên web hơi lạ
+// Cái này là dùng "csrf_middleware" cho tất cả các route
+app.use(csrf_middleware);
+
+// Cách lấy token ra xem
+// Chú ý là hướng dẫn trên web viết có vẻ hơi sai sai
+// The csrf function is called for initialization, and returns the middleware. One can retrieve the current token with
+// app.use(csrf_middleware, (req, res, next) => {
+//     let token = csrf.token(req, res);
+//     console.log("csrf_token =", token);
+//     next();
+// });
+
+//
+// Chú ý là hướng dẫn trên web viết có vẻ hơi sai sai
+// Cách làm mới token
+// It's a good practice to refresh the token as the user logs on. You can do this with:
+// app.use(csrf_middleware, (req, res, next) => {
+//     let token = csrf.refresh(req, res);
+//     console.log("csrf_refresh_token =", token);
+//     next();
+// });
 
 /* ================================================================== */
 // Sessions
@@ -40,6 +87,7 @@ const sessionParms = {
     saveUninitialized: true,
     store: store,
     cookie: { secure: false, sameSite: "strict" },
+    // cookie: { secure: false, sameSite: "strict", httpOnly: false }, // httpOnly: true(default)
 };
 
 if (app.get("env") === "production") {
@@ -76,6 +124,7 @@ app.use(passport.session());
 app.use(require("./middleware/storeLocals"));
 
 app.get("/", (req, res) => {
+    // app.get("/", csrf_middleware, (req, res) => {
     console.log("Home page!");
     console.log("req.flash", res.flash);
     console.log("req.body", res.body);
@@ -86,47 +135,14 @@ app.get("/", (req, res) => {
 });
 
 app.use("/sessions", require("./routes/sessionRoutes"));
+// app.use("/sessions", csrf_middleware, require("./routes/sessionRoutes"));
 
 //////////////////////////////////////////////////////////////////////
-// This is for Working with FLash
-// app.get("/secretWord", (req, res) => {
-//     console.log("req.sessionID = ", req.sessionID);
-//     console.log("req.session = ", req.session);
-
-//     if (!req.session.secretWord) {
-//         req.session.secretWord = "syzygy";
-//     }
-
-//     res.locals.info = req.flash("info");
-
-//     res.locals.errors = req.flash("error");
-
-//     console.log("res.locals = ", res.locals);
-
-//     res.render("secretWord", { secretWord: req.session.secretWord });
-// });
-
-// app.post("/secretWord", (req, res) => {
-//     //
-//     console.log("req.body = ", req.body);
-
-//     // tạo array có tên là "error", có thể cho bao nhiêu message tùy ý
-//     if (req.body.secretWord.toUpperCase()[0] == "P") {
-//         req.flash("error", "That word won't work!");
-
-//         req.flash("error", "You can't use words that start with p.");
-//     } else {
-//         req.session.secretWord = req.body.secretWord;
-
-//         req.flash("info", "The secret word was changed.");
-//     }
-
-//     //
-//     res.redirect("/secretWord");
-// });
-
 // app.use("/secretWord", secretWordRouter);
 app.use("/secretWord", auth, secretWordRouter);
+
+// app.use("/secretWord", auth, csrf_middleware, secretWordRouter);
+// app.use("/secretWord", [auth, csrf_middleware], secretWordRouter);
 
 //////////////////////////////////////////////////////////////////////
 // Error handling
