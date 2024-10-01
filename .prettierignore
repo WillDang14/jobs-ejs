@@ -3,3 +3,6 @@
 /views/secretWord.ejs
 /views/logon.ejs
 /views/register.ejs
+/views/job.ejs
+/views/editJob.ejs
+/views/addJob.ejs

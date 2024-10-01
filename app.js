@@ -4,6 +4,11 @@ const express = require("express");
 require("express-async-errors");
 const app = express();
 
+// extra security packages
+const helmet = require("helmet");
+const xss = require("xss-clean");
+const rateLimiter = require("express-rate-limit");
+
 // .Protecting a Route
 const secretWordRouter = require("./routes/secretWord");
 const auth = require("./middleware/auth");
@@ -11,6 +16,23 @@ const auth = require("./middleware/auth");
 // “cross site request forgery” (CSRF)
 const csrf = require("host-csrf");
 const cookieParser = require("cookie-parser");
+
+// Jobs
+const jobsRouter = require("./routes/jobs");
+
+/* ================================================================== */
+// applying security libs
+app.set("trust proxy", 1);
+
+app.use(
+    rateLimiter({
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        max: 100, // limit each IP to 100 requests per windowMs
+    })
+);
+
+app.use(helmet());
+app.use(xss());
 
 /* ================================================================== */
 app.set("view engine", "ejs");
@@ -143,6 +165,10 @@ app.use("/secretWord", auth, secretWordRouter);
 
 // app.use("/secretWord", auth, csrf_middleware, secretWordRouter);
 // app.use("/secretWord", [auth, csrf_middleware], secretWordRouter);
+
+//////////////////////////////////////////////////////////////////////
+// JOBs
+app.use("/jobs", auth, jobsRouter);
 
 //////////////////////////////////////////////////////////////////////
 // Error handling

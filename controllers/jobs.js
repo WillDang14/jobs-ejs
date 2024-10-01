@@ -1,120 +1,166 @@
 const Job = require("../models/Job");
 
-const { StatusCodes } = require("http-status-codes");
-
-const { BadRequestError, NotFoundError } = require("../errors");
-const User = require("../models/User");
+const parseVErr = require("../utils/parseValidationErrs");
 
 ///////////////////////////////////////////////
 const getAllJobs = async (req, res) => {
+    // console.log("getAllJobs = ", req.user._id.toString());
+
+    const userId = req.user._id.toString();
+
     const jobs = await Job.find({
-        createdBy: req.user.userId,
+        createdBy: userId,
     }).sort("createdAt");
 
-    res.status(StatusCodes.OK).json({ count: jobs.length, jobs });
+    res.render("jobs", { jobs });
 };
 
 const getJob = async (req, res) => {
-    // console.log(req.user); //==>> { userId: '66becb3fa0ac5cbb54f09921', name: 'will' }
-    // console.log(req.params); // ==>> { id: '66bf9003667d3a2da0bf0925' }
+    // console.log("getJob - req.user = ", req.user);
+    // console.log("getJob - req.params = ", req.params);
+    // const userId = req.user._id.toString();
+    // const { _id: userId } = req.user;
+    // const { id: jobId } = req.params;
 
-    // Chú ý: cái này là nested Destructuring Object
-    // ==>> userId = 66becb3fa0ac5cbb54f09921
-    // ==>> jobId = 66bf9003667d3a2da0bf0925
     const {
-        user: { userId },
+        user: { _id: userId },
         params: { id: jobId },
     } = req;
 
-    // console.log(userId); // 66becb3fa0ac5cbb54f09921
-    // console.log(jobId); //  66bf9003667d3a2da0bf0925
+    console.log("getJob - userId = ", userId);
+    console.log("getJob - jobId = ", jobId);
 
     const job = await Job.findOne({
         _id: jobId,
-        createdBy: userId,
+        createdBy: userId.toString(),
     });
 
+    // console.log("editJob - job = ", job);
+
     if (!job) {
-        throw new NotFoundError(`No job with id ${jobId}`);
+        req.flash("error", `No job with id ${jobId}. Can not edit!`);
+
+        // return res.render("job", { job });
+        return res.redirect("/jobs");
     }
 
-    res.status(StatusCodes.OK).json({ job });
+    // res.render("editJob", { job });
+    res.render("job", { job });
 };
 
 const createJob = async (req, res) => {
-    // console.log(req.body);
+    // console.log("createJob - req.body = ", req.body);
     // console.log(req.user);
 
-    req.body.createdBy = req.user.userId;
+    if (req.body.company === "" || req.body.position === "") {
+        req.flash(
+            "error",
+            "Company or Position can not be empty! Please try again!"
+        );
 
-    // console.log(req.body);
+        return res.render("job", {
+            errors: req.flash("error"),
+            job: null,
+        });
+    }
+
+    const userId = req.user._id.toString();
+
+    delete req.body._csrf;
+
+    req.body.createdBy = userId;
+
+    console.log("createJob - req.body = ", req.body);
 
     const job = await Job.create(req.body);
 
-    res.status(StatusCodes.CREATED).json({ job });
+    res.redirect("/jobs");
 };
 
 const updateJob = async (req, res) => {
+    // console.log("updateJob req.body = ", req.body);
+    // console.log("updateJob req.user", req.user);
+    // console.log("updateJob params", req.params);
+
+    // const userId = req.user._id.toString();
+    // const jobId = req.params.id;
+
     const {
-        body: { company, position },
-        user: { userId },
+        user: { _id: userId },
         params: { id: jobId },
     } = req;
 
-    if (company === "" || position === "") {
-        throw new BadRequestError("Company or Position can not be empty!");
+    console.log("updateJob - userId = ", userId);
+    console.log("updateJob - jobId = ", jobId);
+
+    delete req.body._csrf;
+
+    console.log("updateJob req.body = ", req.body);
+
+    const job = await Job.findOne({
+        _id: jobId,
+        createdBy: userId.toString(),
+    });
+
+    if (req.body.company === "" || req.body.position === "") {
+        //
+        req.flash(
+            "error",
+            "Company or Position can not be empty! Please try again!"
+        );
+
+        return res.render("job", {
+            errors: req.flash("error"),
+            job,
+        });
     }
 
-    // Chú ý: cái này chỉ cần match ID là có thể update
-    // ==>> tức là khác userId vẫn có thể update job của userId khác
-    const job = await Job.findByIdAndUpdate(
-        { _id: jobId, createdBy: userId }, // find
+    const jobUpdated = await Job.findByIdAndUpdate(
+        { _id: jobId, createdBy: userId.toString() }, // find
         req.body, // update with this data
         { new: true, runValidators: true } // run validator
     );
 
-    // Chú ý: cái này phải match ID và userId thì mới update
-    // ==>> tức là nếu khác userId thì không thể update job của userId khác
-    // const job = await Job.findOneAndUpdate(
-    //     { _id: jobId, createdBy: userId }, // find
-    //     req.body, // update with this data
-    //     { new: true, runValidators: true } // run validator
-    // );
+    // console.log(jobUpdated);
 
-    // console.log(job);
-
-    if (!job) {
-        throw new NotFoundError(`No job with id ${jobId}`);
-    }
-
-    res.status(StatusCodes.OK).json({ job });
+    res.redirect("/jobs");
 };
 
 const deleteJob = async (req, res) => {
+    // console.log("deleteJob user._id = ", req.user._id);
+    // console.log("deleteJob req.params = ", req.params);
+
+    // const userId = req.user._id.toString();
+    // const jobId = req.params.id;
+
     const {
-        user: { userId },
+        user: { _id: userId },
         params: { id: jobId },
     } = req;
 
+    console.log("deleteJob - userId = ", userId);
+    console.log("deleteJob - jobId = ", jobId);
+
     const job = await Job.findByIdAndDelete({
         _id: jobId,
-        createdBy: userId,
+        createdBy: userId.toString(),
     });
 
     if (!job) {
-        throw new NotFoundError(`No job with id ${jobId}`);
+        req.flash("error", `No job with id ${jobId} !`);
+
+        return res.redirect("/jobs");
     }
 
-    //
-    // res.status(StatusCodes.OK).send(
-    //     `Job \"${jobId}\" has successfully deleted!`
-    // );
-
-    // Sửa theo bài học week12
-    res.status(StatusCodes.OK).json({
-        msg: "The entry was deleted successfully!",
-    });
+    res.redirect("/jobs");
 };
+
+const newEntry = async (req, res) => {
+    res.render("job", { job: null });
+
+    // res.render("addJob", { jobs: null });
+};
+
 ///////////////////////////////////////////////
 module.exports = {
     getAllJobs,
@@ -122,4 +168,5 @@ module.exports = {
     createJob,
     updateJob,
     deleteJob,
+    newEntry,
 };
