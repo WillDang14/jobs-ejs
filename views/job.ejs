@@ -1,0 +1,101 @@
+<%- include("partials/head.ejs") %> 
+
+<%- include("partials/header.ejs") %>
+
+
+<% if (!job) { %>
+    <h2>Create New Job</h2>
+
+    <form method="POST" action="/jobs">
+        <input type="hidden" name="_csrf" value="<%= _csrf %>" />
+
+        <div>
+            <label name="company">Company:</label>
+            <input name="company" />
+        </div>
+
+        <br />
+
+        <div>
+            <label name="position">Position:</label>
+            <input name="position" />
+        </div>
+
+        <br />
+
+        <div>
+            <label for="status">Status:</label>
+
+            <select id="status" name="status">
+                <option value="pending">pending</option>
+                <option value="interview">interview</option>
+                <option value="declined">declined</option>
+            </select>
+        </div>
+
+        <br />
+        <br />
+
+        <div>
+            <button style="font-size: 18px; padding: 10px 15px;">
+                Create
+            </button>
+
+            <a href="/jobs" style="margin-left: 1rem;">
+                <button type="button" style="font-size: 18px; padding: 10px 15px;">
+                    Cancel
+                </button>
+            </a>
+        </div>
+    </form>
+<% } %>
+
+
+<% if (job) { %>
+
+    <h2>Edit Job</h2>
+
+    <form method="POST">
+        <input type="hidden" name="_csrf" value="<%= _csrf %>" />
+
+        <div>
+            <label name="company">Company:</label>
+            <input name="company" value="<%= job.company %>" />
+        </div>
+
+        <br />
+
+        <div>
+            <label name="position">Position:</label>
+            <input name="position" value="<%= job.position %>" />
+        </div>
+
+        <br />
+
+        <div>
+            <label for="status">Status:</label>
+
+            <select id="status" name="status">
+                <option value="pending">pending</option>
+                <option value="interview">interview</option>
+                <option value="declined">declined</option>
+            </select>
+        </div>
+
+        <br />
+        <br />
+
+        <div>
+            <button style="font-size: 18px; padding: 10px 15px;">
+                Update
+            </button>
+
+            <a href="/jobs" style="margin-left: 1rem;">
+                <button type="button" style="font-size: 18px; padding: 10px 15px;">
+                    Cancel
+                </button>
+            </a>
+        </div>
+    </form>
+
+<% } %>
