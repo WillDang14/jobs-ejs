@@ -15,7 +15,7 @@ const passportInit = () => {
                 //
                 try {
                     const user = await User.findOne({ email: email });
-                    console.log("Passport data from DB. User = ", user);
+                    // console.log("Passport data from DB. User = ", user);
 
                     if (!user) {
                         return done(null, false, {
@@ -43,7 +43,7 @@ const passportInit = () => {
 
     //
     passport.serializeUser(async function (user, done) {
-        console.log("serializeUser. User = ", user);
+        // console.log("serializeUser. User = ", user);
 
         done(null, user.id);
     });
@@ -53,7 +53,7 @@ const passportInit = () => {
         try {
             const user = await User.findById(id);
 
-            console.log("deserializeUser. User = ", user);
+            // console.log("deserializeUser. User = ", user);
 
             if (!user) {
                 return done(new Error("user not found"));
