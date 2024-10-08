@@ -5,14 +5,14 @@ const parseVErr = require("../utils/parseValidationErrs"); // correct by this on
 
 ///////////////////////////////////////////////////////////////////////
 const registerShow = (req, res) => {
-    console.log("registerShow");
+    // console.log("registerShow");
 
     res.render("register");
 };
 
 const registerDo = async (req, res, next) => {
     //
-    console.log("registerDo / req.body = : ", req.body);
+    // console.log("registerDo / req.body = : ", req.body);
     //
 
     if (req.body.password != req.body.password1) {
@@ -62,7 +62,7 @@ const logoff = (req, res) => {
 
 const logonShow = (req, res) => {
     if (req.user) {
-        console.log("logonShow / req.user =", req.user);
+        // console.log("logonShow / req.user =", req.user);
 
         return res.redirect("/");
     }

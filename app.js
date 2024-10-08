@@ -91,11 +91,20 @@ const session = require("express-session");
 
 //
 const MongoDBStore = require("connect-mongodb-session")(session);
+
+//
 const url = process.env.MONGO_URI;
+
+// week16 => You should change it to look something like the following
+let mongoURL = process.env.MONGO_URI;
+if (process.env.NODE_ENV == "test") {
+    mongoURL = process.env.MONGO_URI_TEST;
+}
 
 const store = new MongoDBStore({
     // may throw an error, which won't be caught
-    uri: url,
+    // uri: url,
+    uri: mongoURL,
     collection: "mySessions",
 });
 
@@ -141,17 +150,32 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 //////////////////////////////////////////////////////////////////////
+// testing week16
+// You can fix the issue by setting the Content-Type header appropriately with this middleware, which should be added to app.js before your routes
+app.use((req, res, next) => {
+    if (req.path == "/multiply") {
+        res.set("Content-Type", "application/json");
+    } else {
+        res.set("Content-Type", "text/html");
+    }
+
+    next();
+});
+
+//////////////////////////////////////////////////////////////////////
 // Add these lines right after the connect-flash line:
 
 app.use(require("./middleware/storeLocals"));
 
+//////////////////////////////////////////////////////////////////////
 app.get("/", (req, res) => {
     // app.get("/", csrf_middleware, (req, res) => {
-    console.log("Home page!");
-    console.log("req.flash", res.flash);
-    console.log("req.body", res.body);
+    // console.log("Home page!");
+    // console.log("req.flash", res.flash);
+    // console.log("req.body", res.body);
     // console.log("req.user = ", res.user);
-    console.log("res.locals = ", res.locals);
+    // console.log("req.cookie = ", req.header);
+    // console.log("res.locals = ", res.locals);
 
     res.render("index");
 });
@@ -171,6 +195,23 @@ app.use("/secretWord", auth, secretWordRouter);
 app.use("/jobs", auth, jobsRouter);
 
 //////////////////////////////////////////////////////////////////////
+// testing week16
+app.get("/multiply", (req, res) => {
+    // console.log("multiply test : ", req.query);
+
+    //
+    const result = req.query.first * req.query.second;
+
+    if (result.isNaN) {
+        result = "NaN";
+    } else if (result == null) {
+        result = "null";
+    }
+
+    res.json({ result: result });
+});
+
+//////////////////////////////////////////////////////////////////////
 // Error handling
 app.use((req, res) => {
     res.status(404).send(`That page (${req.url}) was not found.`);
@@ -184,13 +225,30 @@ app.use((err, req, res, next) => {
 });
 
 /* ================================================================== */
+// const port = process.env.PORT || 3000;
+
+// const start = async () => {
+//     try {
+//         await require("./db/connect")(process.env.MONGO_URI);
+
+//         app.listen(port, () =>
+//             console.log(`Server is listening on port ${port}...`)
+//         );
+//     } catch (error) {
+//         console.log(error);
+//     }
+// };
+
+// start();
+
+// testing week16
 const port = process.env.PORT || 3000;
 
-const start = async () => {
+const start = () => {
     try {
-        await require("./db/connect")(process.env.MONGO_URI);
+        require("./db/connect")(mongoURL);
 
-        app.listen(port, () =>
+        return app.listen(port, () =>
             console.log(`Server is listening on port ${port}...`)
         );
     } catch (error) {
@@ -199,3 +257,5 @@ const start = async () => {
 };
 
 start();
+
+module.exports = { app };

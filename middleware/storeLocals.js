@@ -11,7 +11,7 @@ const storeLocals = (req, res, next) => {
 
     res.locals.errors = req.flash("error");
 
-    console.log("storeLocals : ", res.locals);
+    // console.log("storeLocals : ", res.locals);
 
     next();
 };
